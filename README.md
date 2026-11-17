@@ -87,6 +87,13 @@ Este proyecto propone una solución que **centraliza la información**, **reduce
 - Base de datos: sqlite
 - Herramientas: Git y GitHub
 
-## 9. Estado del proyecto
 
+## 9. Diagrama de la base de datos
+![digrama de la base de datos](frontend/img/img.readme/image.png)
+
+## 10. Diseño del login
+![vista del login](frontend/img/img.readme/login.png)
+
+## 12. Estado del proyecto
 En desarrollo.
+
