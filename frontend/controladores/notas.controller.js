@@ -59,10 +59,23 @@
   const fmt = (n) => (n === null || n === undefined ? "—" : n.toFixed(1));
 
   const esc = (s) =>
-    String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    String(s ?? "").replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
 
   const normalizar = (s) =>
-    String(s ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    String(s ?? "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
 
   function guardar() {
     try {
@@ -87,11 +100,18 @@
   function filaHTML(reg) {
     const c = U.calcular(reg);
     const estado = estadoDe(c);
-    const claseEstado = { Aprobado: "not-chip--aprobado", Reprobado: "not-chip--reprobado", "En curso": "not-chip--curso" }[estado];
+    const claseEstado = {
+      Aprobado: "not-chip--aprobado",
+      Reprobado: "not-chip--reprobado",
+      "En curso": "not-chip--curso",
+    }[estado];
 
     const chips = (reg.actividades || [])
       .filter((a) => U.num(a.nota) !== null)
-      .map((a) => `<span class="not-nota" title="${esc(a.nombre || "Nota")}">${U.num(a.nota).toFixed(1)}</span>`)
+      .map(
+        (a) =>
+          `<span class="not-nota" title="${esc(a.nombre || "Nota")}">${U.num(a.nota).toFixed(1)}</span>`,
+      )
       .join("");
 
     const tareas = c.cantidad
@@ -121,27 +141,45 @@
       </tr>`;
   }
 
-  const claseEstado = { Aprobado: "not-chip--aprobado", Reprobado: "not-chip--reprobado", "En curso": "not-chip--curso" };
+  const claseEstado = {
+    Aprobado: "not-chip--aprobado",
+    Reprobado: "not-chip--reprobado",
+    "En curso": "not-chip--curso",
+  };
 
   // Definitiva: promedio de los periodos con nota final completa
   function gruposDefinitiva() {
     const grupos = new Map();
     notas.forEach((r) => {
       const llave = r.estudianteId + "|" + normalizar(r.materia);
-      if (!grupos.has(llave)) grupos.set(llave, { nombre: nombreDe(r), materia: r.materia, periodos: {} });
+      if (!grupos.has(llave))
+        grupos.set(llave, {
+          nombre: nombreDe(r),
+          materia: r.materia,
+          periodos: {},
+        });
       grupos.get(llave).periodos[r.periodo] = U.calcular(r);
     });
     return [...grupos.values()].map((g) => {
-      const completos = PERIODOS.map((p) => g.periodos[p]).filter((c) => c && c.completo);
-      const definitiva = completos.length ? completos.reduce((a, c) => a + c.acumulado, 0) / completos.length : null;
+      const completos = PERIODOS.map((p) => g.periodos[p]).filter(
+        (c) => c && c.completo,
+      );
+      const definitiva = completos.length
+        ? completos.reduce((a, c) => a + c.acumulado * 0.25, 0)
+        : null;
       const todos = completos.length === PERIODOS.length;
-      const estado = !todos ? "En curso" : definitiva >= U.NOTA_MINIMA ? "Aprobado" : "Reprobado";
+      const estado = !todos
+        ? "En curso"
+        : definitiva >= U.NOTA_MINIMA
+          ? "Aprobado"
+          : "Reprobado";
       return { ...g, completos: completos.length, definitiva, estado };
     });
   }
 
   function celdaPeriodo(c, etiqueta) {
-    if (!c) return `<td data-label="${etiqueta}"><span class="not-pend">—</span></td>`;
+    if (!c)
+      return `<td data-label="${etiqueta}"><span class="not-pend">—</span></td>`;
     return c.completo
       ? `<td data-label="${etiqueta}"><strong>${c.acumulado.toFixed(1)}</strong></td>`
       : `<td data-label="${etiqueta}"><span class="not-pend" title="Periodo incompleto">${c.acumulado.toFixed(1)}*</span></td>`;
@@ -170,22 +208,30 @@
     if (esDef) {
       const lista = gruposDefinitiva().filter(
         (g) =>
-          (!q || [g.nombre, g.materia].some((x) => normalizar(x).includes(q))) &&
-          (filtroEstado === "Todos" || g.estado === filtroEstado)
+          (!q ||
+            [g.nombre, g.materia].some((x) => normalizar(x).includes(q))) &&
+          (filtroEstado === "Todos" || g.estado === filtroEstado),
       );
       el.defTbody.innerHTML = lista.map(filaDefinitivaHTML).join("");
       hayFilas = lista.length > 0;
-      finales = lista.filter((g) => g.definitiva !== null).map((g) => g.definitiva);
+      finales = lista
+        .filter((g) => g.definitiva !== null)
+        .map((g) => g.definitiva);
     } else {
       const lista = notas.filter(
         (r) =>
           r.periodo === periodoActivo &&
-          (!q || [nombreDe(r), r.materia].some((x) => normalizar(x).includes(q))) &&
-          (filtroEstado === "Todos" || estadoDe(U.calcular(r)) === filtroEstado)
+          (!q ||
+            [nombreDe(r), r.materia].some((x) => normalizar(x).includes(q))) &&
+          (filtroEstado === "Todos" ||
+            estadoDe(U.calcular(r)) === filtroEstado),
       );
       tbody.innerHTML = lista.map(filaHTML).join("");
       hayFilas = lista.length > 0;
-      finales = lista.map(U.calcular).filter((c) => c.completo).map((c) => c.acumulado);
+      finales = lista
+        .map(U.calcular)
+        .filter((c) => c.completo)
+        .map((c) => c.acumulado);
     }
 
     el.tablaWrap.hidden = esDef || !hayFilas;
@@ -193,7 +239,9 @@
     el.vacio.hidden = hayFilas;
     if (!hayFilas) {
       const hayDatos = notas.length > 0;
-      el.vacioTitulo.textContent = hayDatos ? "Sin resultados" : "Aún no hay notas registradas";
+      el.vacioTitulo.textContent = hayDatos
+        ? "Sin resultados"
+        : "Aún no hay notas registradas";
       el.vacioTexto.textContent = hayDatos
         ? esDef
           ? "No hay materias que coincidan con la búsqueda o el filtro."
@@ -202,8 +250,12 @@
     }
 
     // Resumen del periodo (o de las definitivas)
-    el.total.textContent = esDef ? gruposDefinitiva().length : notas.filter((r) => r.periodo === periodoActivo).length;
-    el.promedio.textContent = finales.length ? (finales.reduce((a, b) => a + b, 0) / finales.length).toFixed(2) : "—";
+    el.total.textContent = esDef
+      ? gruposDefinitiva().length
+      : notas.filter((r) => r.periodo === periodoActivo).length;
+    el.promedio.textContent = finales.length
+      ? (finales.reduce((a, b) => a + b, 0) / finales.length).toFixed(2)
+      : "—";
     el.bajos.textContent = finales.filter((n) => n < U.NOTA_MINIMA).length;
   }
 
@@ -249,10 +301,17 @@
   }
 
   function llenarEstudiantes(seleccionado) {
-    const lista = estudiantes().filter((e) => e.estado === "Activo" || e.id === seleccionado);
+    const lista = estudiantes().filter(
+      (e) => e.estado === "Activo" || e.id === seleccionado,
+    );
     el.estudiante.innerHTML = lista.length
       ? '<option value="">Selecciona un estudiante</option>' +
-        lista.map((e) => `<option value="${esc(e.id)}">${esc(e.nombre)} (${esc(e.codigo)})</option>`).join("")
+        lista
+          .map(
+            (e) =>
+              `<option value="${esc(e.id)}">${esc(e.nombre)} (${esc(e.codigo)})</option>`,
+          )
+          .join("")
       : '<option value="">No hay estudiantes: agrégalos primero</option>';
     el.estudiante.value = seleccionado || "";
   }
@@ -269,12 +328,18 @@
       .map((m) => `<option value="${esc(m.nombre)}"></option>`)
       .join("");
     llenarEstudiantes(reg ? reg.estudianteId : "");
-    el.periodo.value = reg ? reg.periodo : periodoActivo === "def" ? "1" : periodoActivo;
+    el.periodo.value = reg
+      ? reg.periodo
+      : periodoActivo === "def"
+        ? "1"
+        : periodoActivo;
     if (reg) {
       el.materia.value = reg.materia;
       el.auto.value = reg.autoevaluacion ?? "";
       el.parcial.value = reg.parcial ?? "";
-      (reg.actividades || []).forEach((a) => agregarFilaActividad(a.nombre, a.nota));
+      (reg.actividades || []).forEach((a) =>
+        agregarFilaActividad(a.nombre, a.nota),
+      );
     }
     if (!el.actividades.children.length) agregarFilaActividad();
     actualizarPreview();
@@ -287,28 +352,54 @@
     el.error.hidden = true;
     const estudianteId = el.estudiante.value;
     const materia = el.materia.value.trim();
-    if (!estudianteId) return mostrarError("Selecciona el estudiante.", el.estudiante);
+    if (!estudianteId)
+      return mostrarError("Selecciona el estudiante.", el.estudiante);
     if (!materia) return mostrarError("Escribe la materia.", el.materia);
 
     const form = leerFormulario();
-    const fueraDeRango = (v) => v !== "" && (U.num(v) === null || U.num(v) < 0 || U.num(v) > 5);
+    const fueraDeRango = (v) =>
+      v !== "" && (U.num(v) === null || U.num(v) < 0 || U.num(v) > 5);
 
-    if (fueraDeRango(form.autoevaluacion)) return mostrarError("La autoevaluación debe estar entre 0.0 y 5.0.", el.auto);
-    if (fueraDeRango(form.parcial)) return mostrarError("El parcial debe estar entre 0.0 y 5.0.", el.parcial);
+    if (fueraDeRango(form.autoevaluacion))
+      return mostrarError(
+        "La autoevaluación debe estar entre 0.0 y 5.0.",
+        el.auto,
+      );
+    if (fueraDeRango(form.parcial))
+      return mostrarError("El parcial debe estar entre 0.0 y 5.0.", el.parcial);
 
     const filas = [...el.actividades.querySelectorAll(".not-act-nota")];
     for (const campo of filas) {
-      if (fueraDeRango(campo.value.trim())) return mostrarError("Cada nota de tareas, talleres y quices debe estar entre 0.0 y 5.0.", campo);
+      if (fueraDeRango(campo.value.trim()))
+        return mostrarError(
+          "Cada nota de tareas, talleres y quices debe estar entre 0.0 y 5.0.",
+          campo,
+        );
     }
 
     // Se descartan filas vacías
     const actividades = form.actividades.filter((a) => a.nota !== "");
-    if (form.autoevaluacion === "" && form.parcial === "" && !actividades.length)
+    if (
+      form.autoevaluacion === "" &&
+      form.parcial === "" &&
+      !actividades.length
+    )
       return mostrarError("Escribe al menos una nota.", el.auto);
 
     const periodo = el.periodo.value;
-    if (notas.some((r) => r.estudianteId === estudianteId && normalizar(r.materia) === normalizar(materia) && r.periodo === periodo && r.id !== editandoId))
-      return mostrarError(`Ese estudiante ya tiene notas en esa materia en el Periodo ${periodo}. Edita el registro existente.`, el.materia);
+    if (
+      notas.some(
+        (r) =>
+          r.estudianteId === estudianteId &&
+          normalizar(r.materia) === normalizar(materia) &&
+          r.periodo === periodo &&
+          r.id !== editandoId,
+      )
+    )
+      return mostrarError(
+        `Ese estudiante ya tiene notas en esa materia en el Periodo ${periodo}. Edita el registro existente.`,
+        el.materia,
+      );
 
     const est = estudiantes().find((e) => e.id === estudianteId);
     return {
@@ -386,7 +477,11 @@
 
     if (boton.dataset.accion === "editar") {
       abrirModal(reg);
-    } else if (confirm(`¿Eliminar las notas de ${nombreDe(reg)} en ${reg.materia}? Esta acción no se puede deshacer.`)) {
+    } else if (
+      confirm(
+        `¿Eliminar las notas de ${nombreDe(reg)} en ${reg.materia}? Esta acción no se puede deshacer.`,
+      )
+    ) {
       notas = notas.filter((r) => r.id !== id);
       guardar();
       render();

@@ -10,14 +10,28 @@
   const $ = (id) => document.getElementById(id);
 
   const el = {
-    materia: $("ep-materia"), tabs: $("ep-tabs"), resumen: $("ep-resumen"),
-    tablaPeriodo: $("ep-tabla-periodo"), tbody: $("ep-tbody"),
-    tablaDef: $("ep-tabla-def"), defTbody: $("ep-def-tbody"),
-    vacio: $("ep-vacio"), vacioTitulo: $("ep-vacio-titulo"), vacioTexto: $("ep-vacio-texto"),
-    modal: $("ep-modal"), form: $("ep-form"), titulo: $("ep-modal-titulo"), sub: $("ep-modal-sub"),
-    auto: $("ep-auto"), parcial: $("ep-parcial"), actividades: $("ep-actividades"),
-    agregarAct: $("ep-agregar-act"), preview: $("ep-preview"), error: $("ep-error"),
-    cerrar: $("ep-cerrar"), cancelar: $("ep-cancelar"),
+    materia: $("ep-materia"),
+    tabs: $("ep-tabs"),
+    resumen: $("ep-resumen"),
+    tablaPeriodo: $("ep-tabla-periodo"),
+    tbody: $("ep-tbody"),
+    tablaDef: $("ep-tabla-def"),
+    defTbody: $("ep-def-tbody"),
+    vacio: $("ep-vacio"),
+    vacioTitulo: $("ep-vacio-titulo"),
+    vacioTexto: $("ep-vacio-texto"),
+    modal: $("ep-modal"),
+    form: $("ep-form"),
+    titulo: $("ep-modal-titulo"),
+    sub: $("ep-modal-sub"),
+    auto: $("ep-auto"),
+    parcial: $("ep-parcial"),
+    actividades: $("ep-actividades"),
+    agregarAct: $("ep-agregar-act"),
+    preview: $("ep-preview"),
+    error: $("ep-error"),
+    cerrar: $("ep-cerrar"),
+    cancelar: $("ep-cancelar"),
   };
 
   const PERIODOS = ["1", "2", "3", "4"];
@@ -25,22 +39,33 @@
   let tab = "1"; // "1".."4" o "def"
   let editando = null; // { estudiante, registroId }
 
-  const materiaActual = () => NovaPro.misMaterias().find((m) => m.id === materiaId) || null;
+  const materiaActual = () =>
+    NovaPro.misMaterias().find((m) => m.id === materiaId) || null;
   const periodoDe = (r) => String(r.periodo || "1");
 
   function estadoDe(c) {
     if (!c.completo) return "En curso";
     return c.acumulado >= U.NOTA_MINIMA ? "Aprobado" : "Reprobado";
   }
-  const claseEstado = { Aprobado: "ea-chip--aprobado", Reprobado: "ea-chip--reprobado", "En curso": "ea-chip--curso" };
+  const claseEstado = {
+    Aprobado: "ea-chip--aprobado",
+    Reprobado: "ea-chip--reprobado",
+    "En curso": "ea-chip--curso",
+  };
 
   /* ---------- Selector de materia ---------- */
   function llenarMaterias() {
     const materias = NovaPro.misMaterias();
     el.materia.innerHTML = materias.length
-      ? materias.map((m) => `<option value="${esc(m.id)}">${esc(m.nombre)} · ${esc(m.grado)}</option>`).join("")
+      ? materias
+          .map(
+            (m) =>
+              `<option value="${esc(m.id)}">${esc(m.nombre)} · ${esc(m.grado)}</option>`,
+          )
+          .join("")
       : '<option value="">Sin materias asignadas</option>';
-    if (!materias.some((m) => m.id === materiaId)) materiaId = materias.length ? materias[0].id : "";
+    if (!materias.some((m) => m.id === materiaId))
+      materiaId = materias.length ? materias[0].id : "";
     el.materia.value = materiaId;
     el.materia.disabled = materias.length === 0;
   }
@@ -71,7 +96,10 @@
     const estado = estadoDe(c);
     const chips = (reg.actividades || [])
       .filter((a) => U.num(a.nota) !== null)
-      .map((a) => `<span class="ea-nota" title="${esc(a.nombre || "Nota")}">${U.num(a.nota).toFixed(1)}</span>`)
+      .map(
+        (a) =>
+          `<span class="ea-nota" title="${esc(a.nombre || "Nota")}">${U.num(a.nota).toFixed(1)}</span>`,
+      )
       .join("");
     const tareas = c.cantidad
       ? `<div class="ea-chips">${chips}</div><span class="ea-resumen-act">Promedio <b>${fmt(c.promTareas)}</b> (${c.cantidad} ${c.cantidad === 1 ? "nota" : "notas"})</span>`
@@ -96,15 +124,27 @@
   function filaDefinitiva(est, registros) {
     const calc = {};
     PERIODOS.forEach((p) => {
-      const r = registros.find((x) => x.estudianteId === est.id && periodoDe(x) === p);
+      const r = registros.find(
+        (x) => x.estudianteId === est.id && periodoDe(x) === p,
+      );
       calc[p] = r ? U.calcular(r) : null;
     });
-    const completos = PERIODOS.map((p) => calc[p]).filter((c) => c && c.completo);
-    const def = completos.length ? completos.reduce((a, c) => a + c.acumulado, 0) / completos.length : null;
-    const estado = completos.length < PERIODOS.length ? "En curso" : def >= U.NOTA_MINIMA ? "Aprobado" : "Reprobado";
+    const completos = PERIODOS.map((p) => calc[p]).filter(
+      (c) => c && c.completo,
+    );
+    const def = completos.length
+      ? completos.reduce((a, c) => a + c.acumulado * 0.25, 0)
+      : null;
+    const estado =
+      completos.length < PERIODOS.length
+        ? "En curso"
+        : def >= U.NOTA_MINIMA
+          ? "Aprobado"
+          : "Reprobado";
     const celda = (p) => {
       const c = calc[p];
-      if (!c) return `<td data-label="Periodo ${p}"><span class="ea-pend">—</span></td>`;
+      if (!c)
+        return `<td data-label="Periodo ${p}"><span class="ea-pend">—</span></td>`;
       return c.completo
         ? `<td data-label="Periodo ${p}"><strong>${c.acumulado.toFixed(1)}</strong></td>`
         : `<td data-label="Periodo ${p}"><span class="ea-pend" title="Periodo incompleto">${c.acumulado.toFixed(1)}*</span></td>`;
@@ -133,10 +173,18 @@
   function render() {
     llenarMaterias();
     const materia = materiaActual();
-    if (!materia) return mostrarVacio("Aún no tienes materias asignadas", "Cuando el administrador te asigne una materia podrás registrar notas aquí.");
+    if (!materia)
+      return mostrarVacio(
+        "Aún no tienes materias asignadas",
+        "Cuando el administrador te asigne una materia podrás registrar notas aquí.",
+      );
 
     const estudiantes = NovaPro.estudiantesDe(materia.id);
-    if (!estudiantes.length) return mostrarVacio("Aún no hay estudiantes matriculados", `Cuando un estudiante se matricule en ${materia.nombre}, aparecerá aquí para que le registres notas.`);
+    if (!estudiantes.length)
+      return mostrarVacio(
+        "Aún no hay estudiantes matriculados",
+        `Cuando un estudiante se matricule en ${materia.nombre}, aparecerá aquí para que le registres notas.`,
+      );
 
     el.vacio.hidden = true;
     const registros = NovaPro.notasDe(materia);
@@ -145,14 +193,21 @@
     el.tablaDef.hidden = !esDef;
 
     if (esDef) {
-      el.defTbody.innerHTML = estudiantes.map((e) => filaDefinitiva(e, registros)).join("");
+      el.defTbody.innerHTML = estudiantes
+        .map((e) => filaDefinitiva(e, registros))
+        .join("");
       el.resumen.innerHTML = `<b>${estudiantes.length}</b> ${estudiantes.length === 1 ? "estudiante" : "estudiantes"}. El * indica un periodo incompleto.`;
       return;
     }
 
     const delPeriodo = registros.filter((r) => periodoDe(r) === tab);
     el.tbody.innerHTML = estudiantes
-      .map((e) => filaPeriodo(e, delPeriodo.find((r) => r.estudianteId === e.id)))
+      .map((e) =>
+        filaPeriodo(
+          e,
+          delPeriodo.find((r) => r.estudianteId === e.id),
+        ),
+      )
       .join("");
 
     const completos = estudiantes.filter((e) => {
@@ -177,10 +232,12 @@
   const leerForm = () => ({
     autoevaluacion: el.auto.value.trim(),
     parcial: el.parcial.value.trim(),
-    actividades: [...el.actividades.querySelectorAll(".ea-fila-act")].map((f) => ({
-      nombre: f.querySelector(".ep-act-nombre").value.trim(),
-      nota: f.querySelector(".ep-act-nota").value.trim(),
-    })),
+    actividades: [...el.actividades.querySelectorAll(".ea-fila-act")].map(
+      (f) => ({
+        nombre: f.querySelector(".ep-act-nombre").value.trim(),
+        nota: f.querySelector(".ep-act-nota").value.trim(),
+      }),
+    ),
   });
 
   function actualizarPreview() {
@@ -225,21 +282,38 @@
     const { estudiante } = editando;
 
     // Solo se califica a estudiantes matriculados en una materia propia
-    if (!materia || !NovaPro.estudiantesDe(materia.id).some((e) => e.id === estudiante.id)) {
+    if (
+      !materia ||
+      !NovaPro.estudiantesDe(materia.id).some((e) => e.id === estudiante.id)
+    ) {
       cerrarModal();
       NovaPro.toast("Ese estudiante ya no está matriculado en la materia.");
       return render();
     }
 
     const form = leerForm();
-    const fuera = (v) => v !== "" && (U.num(v) === null || U.num(v) < 0 || U.num(v) > 5);
-    if (fuera(form.autoevaluacion)) return mostrarError("La autoevaluación debe estar entre 0.0 y 5.0.", el.auto);
-    if (fuera(form.parcial)) return mostrarError("El parcial debe estar entre 0.0 y 5.0.", el.parcial);
+    const fuera = (v) =>
+      v !== "" && (U.num(v) === null || U.num(v) < 0 || U.num(v) > 5);
+    if (fuera(form.autoevaluacion))
+      return mostrarError(
+        "La autoevaluación debe estar entre 0.0 y 5.0.",
+        el.auto,
+      );
+    if (fuera(form.parcial))
+      return mostrarError("El parcial debe estar entre 0.0 y 5.0.", el.parcial);
     for (const campo of el.actividades.querySelectorAll(".ep-act-nota")) {
-      if (fuera(campo.value.trim())) return mostrarError("Cada nota de tareas, talleres y quices debe estar entre 0.0 y 5.0.", campo);
+      if (fuera(campo.value.trim()))
+        return mostrarError(
+          "Cada nota de tareas, talleres y quices debe estar entre 0.0 y 5.0.",
+          campo,
+        );
     }
     const actividades = form.actividades.filter((a) => a.nota !== "");
-    if (form.autoevaluacion === "" && form.parcial === "" && !actividades.length) {
+    if (
+      form.autoevaluacion === "" &&
+      form.parcial === "" &&
+      !actividades.length
+    ) {
       return mostrarError("Escribe al menos una nota.", el.auto);
     }
 
@@ -256,7 +330,10 @@
     // Si ya existe un registro (p. ej. lo creó el administrador mientras tanto), se actualiza ese
     const todas = NovaPro.todasLasNotas();
     const existente = todas.find(
-      (r) => r.estudianteId === estudiante.id && norm(r.materia) === norm(materia.nombre) && periodoDe(r) === tab
+      (r) =>
+        r.estudianteId === estudiante.id &&
+        norm(r.materia) === norm(materia.nombre) &&
+        periodoDe(r) === tab,
     );
     const id = editando.registroId || (existente && existente.id);
     const nuevas = id
@@ -269,7 +346,10 @@
   }
 
   /* ---------- Eventos ---------- */
-  el.materia.addEventListener("change", () => { materiaId = el.materia.value; render(); });
+  el.materia.addEventListener("change", () => {
+    materiaId = el.materia.value;
+    render();
+  });
 
   el.tabs.addEventListener("click", (ev) => {
     const t = ev.target.closest(".ea-tab");
@@ -286,19 +366,31 @@
     const b = ev.target.closest("button[data-accion]");
     if (!b) return;
     const fila = b.closest("tr");
-    const estudiante = NovaPro.estudiantesDe(materiaId).find((e) => e.id === fila.dataset.est);
+    const estudiante = NovaPro.estudiantesDe(materiaId).find(
+      (e) => e.id === fila.dataset.est,
+    );
     if (!estudiante) return render();
     const reg = NovaPro.todasLasNotas().find((r) => r.id === fila.dataset.reg);
 
     if (b.dataset.accion === "eliminar") {
-      if (!reg || !confirm(`¿Eliminar las notas de ${estudiante.nombre} en el Periodo ${tab}? Esta acción no se puede deshacer.`)) return;
-      NovaPro.guardarNotas(NovaPro.todasLasNotas().filter((r) => r.id !== reg.id));
+      if (
+        !reg ||
+        !confirm(
+          `¿Eliminar las notas de ${estudiante.nombre} en el Periodo ${tab}? Esta acción no se puede deshacer.`,
+        )
+      )
+        return;
+      NovaPro.guardarNotas(
+        NovaPro.todasLasNotas().filter((r) => r.id !== reg.id),
+      );
       return NovaPro.toast("Notas eliminadas.");
     }
     abrirModal(estudiante, b.dataset.accion === "editar" ? reg : null);
   });
 
-  el.agregarAct.addEventListener("click", () => agregarFila().querySelector(".ep-act-nombre").focus());
+  el.agregarAct.addEventListener("click", () =>
+    agregarFila().querySelector(".ep-act-nombre").focus(),
+  );
   el.actividades.addEventListener("click", (ev) => {
     const quitar = ev.target.closest("button");
     if (!quitar) return;
@@ -307,15 +399,24 @@
     actualizarPreview();
   });
   el.form.addEventListener("input", actualizarPreview);
-  el.form.addEventListener("submit", (ev) => { ev.preventDefault(); guardar(); });
+  el.form.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    guardar();
+  });
   el.cerrar.addEventListener("click", cerrarModal);
   el.cancelar.addEventListener("click", cerrarModal);
-  el.modal.addEventListener("click", (ev) => { if (ev.target === el.modal) cerrarModal(); });
+  el.modal.addEventListener("click", (ev) => {
+    if (ev.target === el.modal) cerrarModal();
+  });
 
   // Desde "Mis materias" o desde un aviso
-  window.addEventListener("ep:materia", (ev) => { materiaId = ev.detail; });
+  window.addEventListener("ep:materia", (ev) => {
+    materiaId = ev.detail;
+  });
 
   window.addEventListener("ea:datos", render);
-  window.addEventListener("ea:vista", (ev) => { if (ev.detail === "notas") render(); });
+  window.addEventListener("ea:vista", (ev) => {
+    if (ev.detail === "notas") render();
+  });
   render();
 })();
