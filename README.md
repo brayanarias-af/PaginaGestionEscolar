@@ -84,7 +84,7 @@ Este proyecto propone una solución que **centraliza la información**, **reduce
 ## 8. Tecnologías *(opcional, completar según el proyecto)*
 
 - Lenguaje(s): Node.js, express.js
-- Base de datos: sqlite
+- Base de datos: PostgreSQL
 - Herramientas: Git y GitHub
 
 
@@ -94,6 +94,91 @@ Este proyecto propone una solución que **centraliza la información**, **reduce
 ## 10. Diseño del login
 ![vista del login](frontend/img/img.readme/login.png)
 
-## 12. Estado del proyecto
-En desarrollo.
+## 12. Estrutura del proyecto 
+COLEGIO_NOVA/
+│
+├── frontend/
+│   ├── vistas/
+│   │   ├── login/
+│   │   │   └── login.html
+│   │   │
+│   │   ├── administrador/
+│   │   │   ├── db_admin.html
+│   │   │   ├── estudiantes/
+│   │   │   ├── profesores/
+│   │   │   ├── materias/
+│   │   │   ├── matriculas/
+│   │   │   └── notas/
+│   │   │
+│   │   ├── estudiante/
+│   │   │   └── db_estudiante.html
+│   │   │
+│   │   └── profesor/
+│   │       └── db_profesor.html
+│   │
+│   ├── controladores/
+│   ├── modelos/
+│   ├── css/
+│   ├── img/
+│   ├── js/
+│   └── index.html
+│
+├── backend/
+│   ├── config/
+│   ├── modulos/
+│   │   ├── autenticacion/
+│   │   ├── usuarios/
+│   │   ├── estudiantes/
+│   │   ├── profesores/
+│   │   ├── materias/
+│   │   ├── matriculas/
+│   │   └── notas/
+│   │
+│   ├── middleware/
+│   ├── server.js
+│   └── package.json
+│
+└── database/
+   ├── migraciones/
+   ├── DB_COLEGIO
+
+## 13. Cómo ejecutar el proyecto (front + backend + base de datos)
+
+**Requisitos:** Node.js 20.12 o superior y PostgreSQL con la base `DB_COLEGIO` (esquema original).
+
+```bash
+cd backend
+npm install
+# Configura la conexión en backend/.env (hay un ejemplo en .env.example)
+npm run crear-admin -- correo@dominio.com TuClave "Tu Nombre"   # solo la primera vez
+npm start
+```
+
+Abre **http://localhost:3000** (el backend también sirve el front). Con Live Server (puerto 5501) también funciona si el backend corre en el 3000.
+
+**Primera vez con datos que ya tenías en el navegador:** inicia sesión como administrador desde el mismo navegador/dirección donde estaban. Se suben solos a la base de datos (sin borrar nada del navegador).
+
+### Cómo se guardan los datos (tablas reales de DB_COLEGIO)
+| Pantalla | Tablas |
+|----------|--------|
+| Estudiantes | `usuarios` (rol estudiante) + `estudiantes` + `grados` |
+| Profesores | `usuarios` (rol profesor) + `profesores` (la materia va en `especialidad`) |
+| Materias | `materias` + `grados` |
+| Matrículas | `matriculas` (usa el año lectivo activo de `anios_lectivos`) |
+| Notas | `notas` + `actividades` (al borrar una nota se **anula**, no se elimina) |
+
+- Se respetan tus restricciones, triggers de validación y la auditoría (`auditoria_cambios` registra quién hizo cada cambio).
+- Los ids que genera el front (p. ej. `est-lq3x9`) se relacionan con los ids reales en la tabla `nova_ids`; `nova_versiones` evita que dos guardados simultáneos se pisen.
+- Lo que el panel guardó antes en `nova_datos` se pasa solo a las tablas reales al arrancar (y `nova_datos` queda como copia).
+- Eliminar un estudiante, profesor o materia con registros asociados no se permite (tus llaves foráneas son RESTRICT): se pide cambiarlo a Inactivo.
+- `npm run diagnostico` muestra la estructura real de la base.
+- Respaldo recomendado: `pg_dump -U postgres -d DB_COLEGIO -f respaldo.sql`
+
+### API
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/api/auth/login` | Inicia sesión (administrador, profesor o estudiante) y devuelve un token |
+| GET | `/api/datos` | Datos que el rol puede ver (un estudiante solo ve lo suyo) |
+| PUT | `/api/datos/:clave` | Guarda una colección (respetando los permisos del rol) |
+| GET | `/api/salud` | Comprueba que el servidor responde |
 

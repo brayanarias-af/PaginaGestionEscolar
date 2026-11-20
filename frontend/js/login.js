@@ -2,7 +2,11 @@
 (() => {
   const CLAVE_TEMA = "tema";            // misma clave que el dashboard
   const CLAVE_CORREO = "nova_correo";   // correo recordado
-  const DESTINO = "../admin/db.admin.html";
+  const DESTINOS = {
+    administrador: "../admin/db.admin.html",
+    estudiante: "../estudiantes/db.estudiantes.html",
+    profesor: "../profesores/db.profesores.html"
+  };
 
   const $ = (id) => document.getElementById(id);
   const form = $("login-form");
@@ -64,17 +68,6 @@
     input.focus();
   };
 
-  // Busca el correo entre estudiantes y profesores guardados por el administrador
-  const buscarCuenta = (email) => {
-    const buscado = email.toLowerCase();
-    const igual = (u) => String(u.correo || "").toLowerCase() === buscado;
-    const est = NovaModelo.leer("nova_estudiantes").find(igual);
-    if (est) return { rol: "estudiante", cuenta: est, destino: "../estudiantes/db.estudiantes.html" };
-    const pro = NovaModelo.leer("nova_profesores").find(igual);
-    if (pro) return { rol: "profesor", cuenta: pro, destino: "../profesores/db.profesores.html" };
-    return null;
-  };
-
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     error.hidden = true;
@@ -94,39 +87,22 @@
       else localStorage.removeItem(CLAVE_CORREO);
     } catch {}
 
-    // Estudiantes y profesores: se valida el correo y la contraseña
-    const encontrada = buscarCuenta(email);
-    if (encontrada) {
-      const { cuenta, rol, destino } = encontrada;
-      if (!cuenta.claveHash) {
-        return mostrarError("Esta cuenta aún no tiene contraseña. Pídele al administrador que se la asigne.", clave);
-      }
-      const hash = await NovaUtils.hashClave(clave.value);
-      if (hash !== cuenta.claveHash) {
-        return mostrarError("Correo o contraseña incorrectos.", clave);
-      }
-      if (cuenta.estado !== "Activo") {
-        return mostrarError("Tu cuenta está inactiva. Comunícate con el administrador.", correo);
-      }
-      NovaSesion.iniciar(rol, cuenta.id);
-      window.location.href = destino;
-      return;
-    }
-
+    // El servidor valida el correo y la contraseña de administrador, profesores y estudiantes
     try {
-      const respuesta = await fetch("/api/auth/login", {
+      const respuesta = await fetch(NovaModelo.API + "/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo: email, clave: clave.value })
       });
-      const datos = await respuesta.json();
-      if (!respuesta.ok) return mostrarError(datos.mensaje || "No se pudo iniciar sesión", clave);
-      if (datos.usuario.rol !== "administrador") return mostrarError("La cuenta no tiene acceso a este panel", correo);
+      const datos = await respuesta.json().catch(() => ({}));
+      if (!respuesta.ok) {
+        return mostrarError(datos.mensaje || "No se pudo iniciar sesión", datos.campo === "correo" ? correo : clave);
+      }
       sessionStorage.setItem("nova_token", datos.token);
-      NovaSesion.iniciar("administrador", datos.usuario.id);
-      window.location.href = DESTINO;
+      NovaSesion.iniciar(datos.usuario.rol, datos.usuario.id);
+      window.location.href = DESTINOS[datos.usuario.rol];
     } catch {
-      return mostrarError("No se pudo conectar con el servidor. Abre el proyecto desde http://localhost:3000", correo);
+      return mostrarError("No se pudo conectar con el servidor. Inicia el backend (npm start en la carpeta backend).", correo);
     }
   });
 })();

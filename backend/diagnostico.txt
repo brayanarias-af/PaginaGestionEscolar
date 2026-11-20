@@ -1,0 +1,304 @@
+TABLA actividades  (0 filas)
+   - id bigint NOT NULL
+   - nota_id bigint NOT NULL
+   - nombre character varying NOT NULL
+   - tipo character varying NOT NULL DEFAULT 'Otra'::character varying
+   - calificacion numeric
+   - orden smallint NOT NULL DEFAULT 1
+   - estado character varying NOT NULL DEFAULT 'Vigente'::character varying
+   - creado_en timestamp with time zone NOT NULL DEFAULT now()
+   - actualizado_en timestamp with time zone NOT NULL DEFAULT now()
+   * actividades_nombre_check: CHECK ((btrim((nombre)::text) <> ''::text))
+   * actividades_tipo_check: CHECK (((tipo)::text = ANY ((ARRAY['Tarea'::character varying, 'Taller'::character varying, 'Quiz'::character varying, 'Otra'::character varying])::text[])))
+   * actividades_calificacion_check: CHECK (((calificacion >= (0)::numeric) AND (calificacion <= (5)::numeric)))
+   * actividades_orden_check: CHECK ((orden >= 1))
+   * actividades_estado_check: CHECK (((estado)::text = ANY ((ARRAY['Vigente'::character varying, 'Anulada'::character varying])::text[])))
+   * actividades_nota_id_fkey: FOREIGN KEY (nota_id) REFERENCES notas(id) ON DELETE RESTRICT
+   * actividades_id_not_null: NOT NULL id
+   * actividades_nombre_not_null: NOT NULL nombre
+   * actividades_tipo_not_null: NOT NULL tipo
+   * actividades_orden_not_null: NOT NULL orden
+   * actividades_estado_not_null: NOT NULL estado
+   * actividades_creado_en_not_null: NOT NULL creado_en
+   * actividades_actualizado_en_not_null: NOT NULL actualizado_en
+   * actividades_nota_id_not_null: NOT NULL nota_id
+   * actividades_pkey: PRIMARY KEY (id)
+   ! trigger trg_actualizado
+   ! trigger trg_auditoria
+
+TABLA anios_lectivos  (1 filas)
+   - id bigint NOT NULL
+   - anio smallint NOT NULL
+   - estado character varying NOT NULL DEFAULT 'Activo'::character varying
+   - creado_en timestamp with time zone NOT NULL DEFAULT now()
+   * anios_lectivos_anio_check: CHECK (((anio >= 2000) AND (anio <= 2200)))
+   * anios_lectivos_estado_check: CHECK (((estado)::text = ANY ((ARRAY['Activo'::character varying, 'Cerrado'::character varying])::text[])))
+   * anios_lectivos_id_not_null: NOT NULL id
+   * anios_lectivos_anio_not_null: NOT NULL anio
+   * anios_lectivos_estado_not_null: NOT NULL estado
+   * anios_lectivos_creado_en_not_null: NOT NULL creado_en
+   * anios_lectivos_pkey: PRIMARY KEY (id)
+   * anios_lectivos_anio_key: UNIQUE (anio)
+   ! trigger trg_auditoria
+
+TABLA auditoria_cambios  (8 filas)
+   - id bigint NOT NULL
+   - tabla character varying NOT NULL
+   - registro_id bigint
+   - operacion character varying NOT NULL
+   - valor_anterior jsonb
+   - valor_nuevo jsonb
+   - actor_usuario_id bigint
+   - fecha timestamp with time zone NOT NULL DEFAULT now()
+   * auditoria_cambios_operacion_check: CHECK (((operacion)::text = ANY ((ARRAY['INSERT'::character varying, 'UPDATE'::character varying, 'DELETE'::character varying])::text[])))
+   * auditoria_cambios_id_not_null: NOT NULL id
+   * auditoria_cambios_tabla_not_null: NOT NULL tabla
+   * auditoria_cambios_operacion_not_null: NOT NULL operacion
+   * auditoria_cambios_fecha_not_null: NOT NULL fecha
+   * auditoria_cambios_pkey: PRIMARY KEY (id)
+
+TABLA avisos_leidos  (0 filas)
+   - id bigint NOT NULL
+   - usuario_id bigint NOT NULL
+   - aviso_clave character varying NOT NULL
+   - leido_en timestamp with time zone NOT NULL DEFAULT now()
+   * avisos_leidos_usuario_id_fkey: FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT
+   * avisos_leidos_usuario_id_not_null: NOT NULL usuario_id
+   * avisos_leidos_aviso_clave_not_null: NOT NULL aviso_clave
+   * avisos_leidos_id_not_null: NOT NULL id
+   * avisos_leidos_leido_en_not_null: NOT NULL leido_en
+   * avisos_leidos_pkey: PRIMARY KEY (id)
+   * avisos_leidos_usuario_id_aviso_clave_key: UNIQUE (usuario_id, aviso_clave)
+
+TABLA estudiantes  (0 filas)
+   - id bigint NOT NULL
+   - usuario_id bigint NOT NULL
+   - codigo character varying NOT NULL
+   - documento character varying NOT NULL
+   - grado_id bigint NOT NULL
+   - creado_en timestamp with time zone NOT NULL DEFAULT now()
+   - actualizado_en timestamp with time zone NOT NULL DEFAULT now()
+   * estudiantes_codigo_check: CHECK ((btrim((codigo)::text) <> ''::text))
+   * estudiantes_documento_check: CHECK ((btrim((documento)::text) <> ''::text))
+   * estudiantes_grado_id_fkey: FOREIGN KEY (grado_id) REFERENCES grados(id) ON DELETE RESTRICT
+   * estudiantes_usuario_id_fkey: FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT
+   * estudiantes_codigo_not_null: NOT NULL codigo
+   * estudiantes_documento_not_null: NOT NULL documento
+   * estudiantes_grado_id_not_null: NOT NULL grado_id
+   * estudiantes_creado_en_not_null: NOT NULL creado_en
+   * estudiantes_actualizado_en_not_null: NOT NULL actualizado_en
+   * estudiantes_id_not_null: NOT NULL id
+   * estudiantes_usuario_id_not_null: NOT NULL usuario_id
+   * estudiantes_pkey: PRIMARY KEY (id)
+   * estudiantes_codigo_key: UNIQUE (codigo)
+   * estudiantes_documento_key: UNIQUE (documento)
+   * estudiantes_usuario_id_key: UNIQUE (usuario_id)
+   ! trigger trg_actualizado
+   ! trigger trg_auditoria
+
+TABLA grados  (6 filas)
+   - id bigint NOT NULL
+   - nombre character varying NOT NULL
+   - creado_en timestamp with time zone NOT NULL DEFAULT now()
+   * grados_nombre_check: CHECK ((btrim((nombre)::text) <> ''::text))
+   * grados_id_not_null: NOT NULL id
+   * grados_nombre_not_null: NOT NULL nombre
+   * grados_creado_en_not_null: NOT NULL creado_en
+   * grados_pkey: PRIMARY KEY (id)
+   * grados_nombre_key: UNIQUE (nombre)
+   ! trigger trg_auditoria
+
+TABLA materias  (0 filas)
+   - id bigint NOT NULL
+   - codigo character varying NOT NULL
+   - nombre character varying NOT NULL
+   - grado_id bigint NOT NULL
+   - profesor_id bigint
+   - cupos integer
+   - estado character varying NOT NULL DEFAULT 'Activa'::character varying
+   - creado_en timestamp with time zone NOT NULL DEFAULT now()
+   - actualizado_en timestamp with time zone NOT NULL DEFAULT now()
+   * materias_nombre_check: CHECK ((btrim((nombre)::text) <> ''::text))
+   * materias_cupos_check: CHECK (((cupos IS NULL) OR (cupos > 0)))
+   * materias_estado_check: CHECK (((estado)::text = ANY ((ARRAY['Activa'::character varying, 'Inactiva'::character varying])::text[])))
+   * materias_profesor_id_fkey: FOREIGN KEY (profesor_id) REFERENCES profesores(id) ON DELETE RESTRICT
+   * materias_grado_id_fkey: FOREIGN KEY (grado_id) REFERENCES grados(id) ON DELETE RESTRICT
+   * materias_codigo_not_null: NOT NULL codigo
+   * materias_grado_id_not_null: NOT NULL grado_id
+   * materias_estado_not_null: NOT NULL estado
+   * materias_creado_en_not_null: NOT NULL creado_en
+   * materias_actualizado_en_not_null: NOT NULL actualizado_en
+   * materias_id_not_null: NOT NULL id
+   * materias_nombre_not_null: NOT NULL nombre
+   * materias_pkey: PRIMARY KEY (id)
+   * materias_codigo_key: UNIQUE (codigo)
+   ! trigger trg_actualizado
+   ! trigger trg_auditoria
+
+TABLA matriculas  (0 filas)
+   - id bigint NOT NULL
+   - estudiante_id bigint NOT NULL
+   - materia_id bigint NOT NULL
+   - anio_lectivo_id bigint NOT NULL
+   - estado character varying NOT NULL DEFAULT 'Matriculada'::character varying
+   - fecha_matricula timestamp with time zone NOT NULL DEFAULT now()
+   - fecha_cancelacion timestamp with time zone
+   - creado_en timestamp with time zone NOT NULL DEFAULT now()
+   - actualizado_en timestamp with time zone NOT NULL DEFAULT now()
+   * matriculas_estado_check: CHECK (((estado)::text = ANY ((ARRAY['Matriculada'::character varying, 'Cancelada'::character varying])::text[])))
+   * matriculas_check: CHECK (((((estado)::text = 'Matriculada'::text) AND (fecha_cancelacion IS NULL)) OR (((estado)::text = 'Cancelada'::text) AND (fecha_cancelacion IS NOT NULL))))
+   * matriculas_materia_id_fkey: FOREIGN KEY (materia_id) REFERENCES materias(id) ON DELETE RESTRICT
+   * matriculas_anio_lectivo_id_fkey: FOREIGN KEY (anio_lectivo_id) REFERENCES anios_lectivos(id) ON DELETE RESTRICT
+   * matriculas_estudiante_id_fkey: FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE RESTRICT
+   * matriculas_fecha_matricula_not_null: NOT NULL fecha_matricula
+   * matriculas_creado_en_not_null: NOT NULL creado_en
+   * matriculas_actualizado_en_not_null: NOT NULL actualizado_en
+   * matriculas_materia_id_not_null: NOT NULL materia_id
+   * matriculas_id_not_null: NOT NULL id
+   * matriculas_estudiante_id_not_null: NOT NULL estudiante_id
+   * matriculas_anio_lectivo_id_not_null: NOT NULL anio_lectivo_id
+   * matriculas_estado_not_null: NOT NULL estado
+   * matriculas_pkey: PRIMARY KEY (id)
+   ! trigger trg_validar_matricula
+   ! trigger trg_actualizado
+   ! trigger trg_auditoria
+
+TABLA notas  (0 filas)
+   - id bigint NOT NULL
+   - matricula_id bigint NOT NULL
+   - periodo smallint NOT NULL
+   - autoevaluacion numeric
+   - parcial numeric
+   - estado character varying NOT NULL DEFAULT 'Vigente'::character varying
+   - registrada_por_usuario_id bigint
+   - creado_en timestamp with time zone NOT NULL DEFAULT now()
+   - actualizado_en timestamp with time zone NOT NULL DEFAULT now()
+   * notas_periodo_check: CHECK (((periodo >= 1) AND (periodo <= 4)))
+   * notas_autoevaluacion_check: CHECK (((autoevaluacion >= (0)::numeric) AND (autoevaluacion <= (5)::numeric)))
+   * notas_parcial_check: CHECK (((parcial >= (0)::numeric) AND (parcial <= (5)::numeric)))
+   * notas_estado_check: CHECK (((estado)::text = ANY ((ARRAY['Vigente'::character varying, 'Anulada'::character varying])::text[])))
+   * notas_registrada_por_usuario_id_fkey: FOREIGN KEY (registrada_por_usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT
+   * notas_matricula_id_fkey: FOREIGN KEY (matricula_id) REFERENCES matriculas(id) ON DELETE RESTRICT
+   * notas_periodo_not_null: NOT NULL periodo
+   * notas_estado_not_null: NOT NULL estado
+   * notas_creado_en_not_null: NOT NULL creado_en
+   * notas_actualizado_en_not_null: NOT NULL actualizado_en
+   * notas_id_not_null: NOT NULL id
+   * notas_matricula_id_not_null: NOT NULL matricula_id
+   * notas_pkey: PRIMARY KEY (id)
+   * notas_matricula_id_periodo_key: UNIQUE (matricula_id, periodo)
+   ! trigger trg_validar_nota
+   ! trigger trg_actualizado
+   ! trigger trg_auditoria
+
+TABLA nova_datos  (1 filas)
+   - clave text NOT NULL
+   - datos jsonb NOT NULL
+   - version integer NOT NULL DEFAULT 1
+   - actualizado timestamp with time zone NOT NULL DEFAULT now()
+   * nova_datos_datos_not_null: NOT NULL datos
+   * nova_datos_version_not_null: NOT NULL version
+   * nova_datos_actualizado_not_null: NOT NULL actualizado
+   * nova_datos_clave_not_null: NOT NULL clave
+   * nova_datos_pkey: PRIMARY KEY (clave)
+
+TABLA nova_datos_historial  (0 filas)
+   - id bigint NOT NULL DEFAULT nextval('nova_datos_historial_id_seq'::regclass)
+   - clave text NOT NULL
+   - version integer NOT NULL
+   - datos jsonb NOT NULL
+   - usuario text
+   - fecha timestamp with time zone NOT NULL DEFAULT now()
+   * nova_datos_historial_id_not_null: NOT NULL id
+   * nova_datos_historial_clave_not_null: NOT NULL clave
+   * nova_datos_historial_version_not_null: NOT NULL version
+   * nova_datos_historial_datos_not_null: NOT NULL datos
+   * nova_datos_historial_fecha_not_null: NOT NULL fecha
+   * nova_datos_historial_pkey: PRIMARY KEY (id)
+
+TABLA preferencias_usuario  (0 filas)
+   - usuario_id bigint NOT NULL
+   - tema character varying NOT NULL DEFAULT 'claro'::character varying
+   - actualizado_en timestamp with time zone NOT NULL DEFAULT now()
+   * preferencias_usuario_tema_check: CHECK (((tema)::text = ANY ((ARRAY['claro'::character varying, 'oscuro'::character varying])::text[])))
+   * preferencias_usuario_usuario_id_fkey: FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT
+   * preferencias_usuario_usuario_id_not_null: NOT NULL usuario_id
+   * preferencias_usuario_tema_not_null: NOT NULL tema
+   * preferencias_usuario_actualizado_en_not_null: NOT NULL actualizado_en
+   * preferencias_usuario_pkey: PRIMARY KEY (usuario_id)
+
+TABLA profesores  (0 filas)
+   - id bigint NOT NULL
+   - usuario_id bigint NOT NULL
+   - documento character varying NOT NULL
+   - especialidad character varying
+   - creado_en timestamp with time zone NOT NULL DEFAULT now()
+   - actualizado_en timestamp with time zone NOT NULL DEFAULT now()
+   * profesores_documento_check: CHECK ((btrim((documento)::text) <> ''::text))
+   * profesores_usuario_id_fkey: FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT
+   * profesores_usuario_id_not_null: NOT NULL usuario_id
+   * profesores_documento_not_null: NOT NULL documento
+   * profesores_creado_en_not_null: NOT NULL creado_en
+   * profesores_actualizado_en_not_null: NOT NULL actualizado_en
+   * profesores_id_not_null: NOT NULL id
+   * profesores_pkey: PRIMARY KEY (id)
+   * profesores_usuario_id_key: UNIQUE (usuario_id)
+   * profesores_documento_key: UNIQUE (documento)
+   ! trigger trg_actualizado
+   ! trigger trg_auditoria
+
+TABLA usuarios  (1 filas)
+   - id bigint NOT NULL
+   - nombre character varying NOT NULL
+   - correo character varying NOT NULL
+   - clave_hash text NOT NULL
+   - rol character varying NOT NULL
+   - estado character varying NOT NULL DEFAULT 'Activo'::character varying
+   - creado_en timestamp with time zone NOT NULL DEFAULT now()
+   - actualizado_en timestamp with time zone NOT NULL DEFAULT now()
+   * usuarios_nombre_check: CHECK ((btrim((nombre)::text) <> ''::text))
+   * usuarios_correo_check: CHECK ((btrim((correo)::text) <> ''::text))
+   * usuarios_clave_hash_check: CHECK ((btrim(clave_hash) <> ''::text))
+   * usuarios_rol_check: CHECK (((rol)::text = ANY ((ARRAY['administrador'::character varying, 'profesor'::character varying, 'estudiante'::character varying])::text[])))
+   * usuarios_estado_check: CHECK (((estado)::text = ANY ((ARRAY['Activo'::character varying, 'Retirado'::character varying, 'Inactivo'::character varying])::text[])))
+   * usuarios_id_not_null: NOT NULL id
+   * usuarios_nombre_not_null: NOT NULL nombre
+   * usuarios_correo_not_null: NOT NULL correo
+   * usuarios_clave_hash_not_null: NOT NULL clave_hash
+   * usuarios_rol_not_null: NOT NULL rol
+   * usuarios_estado_not_null: NOT NULL estado
+   * usuarios_creado_en_not_null: NOT NULL creado_en
+   * usuarios_actualizado_en_not_null: NOT NULL actualizado_en
+   * usuarios_pkey: PRIMARY KEY (id)
+   ! trigger trg_actualizado
+   ! trigger trg_auditoria
+
+VISTA vw_boletin
+   - matricula_id bigint
+   - estado_matricula character varying
+   - estudiante_id bigint
+   - estudiante character varying
+   - codigo character varying
+   - grado character varying
+   - materia_id bigint
+   - codigo_materia character varying
+   - materia character varying
+   - anio smallint
+   - periodos_completos bigint
+   - promedio_actual numeric
+   - estado_academico text
+
+VISTA vw_notas_periodo
+   - nota_id bigint
+   - matricula_id bigint
+   - estudiante_id bigint
+   - materia_id bigint
+   - anio_lectivo_id bigint
+   - periodo smallint
+   - autoevaluacion numeric
+   - parcial numeric
+   - promedio_actividades numeric
+   - cantidad_actividades bigint
+   - acumulado numeric
+   - definitiva_periodo numeric
+
